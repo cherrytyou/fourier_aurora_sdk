@@ -1,0 +1,91 @@
+pipeline {
+    agent any
+    parameters {
+        string(name: 'MS_ENDPOINT', defaultValue: 'http://localhost:8081', description: 'MeterSphere 服务地址')
+        string(name: 'MS_ACCESS_KEY', defaultValue: 'nMLbbVVnJB7Y0y8E', description: 'MeterSphere Access Key')
+        string(name: 'MS_SECRET_KEY', defaultValue: 'bn774K6e9enI2UtI', description: 'MeterSphere Secret Key')
+    }
+    environment {
+        PROJECT_NAME = 'Aurora-SDK-Test'
+        TEST_PLAN_NAME = 'Aurora-API-Test-Plan'
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/cherrytyou/fourier_aurora_sdk.git'
+            }
+        }
+        
+        stage('Setup Environment') {
+            steps {
+                sh '''
+                    python -m pip install --upgrade pip
+                    pip install pytest pytest-html junitxml
+                '''
+            }
+        }
+        
+        stage('Run Tests') {
+            steps {
+                sh '''
+                    # 运行测试并生成 JUnit XML 报告
+                    pytest test_Aurora_sdk_api.py --junitxml=test-results.xml -v
+                    
+                    # 或者运行手动测试脚本
+                    python run_aurora_tests_for_metersphere.py
+                '''
+            }
+            post {
+                always {
+                    // 存档测试报告
+                    junit 'test-results.xml'
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: false,
+                        keepAll: true,
+                        reportDir: '.',
+                        reportFiles: 'report.html',
+                        reportName: 'HTML Test Report'
+                    ])
+                }
+            }
+        }
+        
+        stage('Upload to MeterSphere') {
+            steps {
+                script {
+                    // 使用 MeterSphere Jenkins 插件上传结果
+                    meterSphereV3(
+                        msAccessKey: params.MS_ACCESS_KEY,
+                        msEndpoint: params.MS_ENDPOINT, 
+                        msSecretKey: params.MS_SECRET_KEY,
+                        organizationId: '100001',
+                        projectName: PROJECT_NAME,
+                        testPlanName: TEST_PLAN_NAME,
+                        resultFile: 'test-results.xml',  // JUnit 格式结果文件
+                        resourceId: 'aurora-sdk-test-' + env.BUILD_NUMBER
+                    )
+                    
+                    // 或者使用命令行工具
+                    sh '''
+                        # 如果有 MeterSphere CLI 工具
+                        ms-cli upload-results \
+                          --endpoint ${MS_ENDPOINT} \
+                          --access-key ${MS_ACCESS_KEY} \
+                          --secret-key ${MS_SECRET_KEY} \
+                          --project "${PROJECT_NAME}" \
+                          --test-plan "${TEST_PLAN_NAME}" \
+                          --results-file test-results.xml
+                    '''
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            // 清理工作空间
+            cleanWs()
+        }
+    }
+}
