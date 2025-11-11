@@ -11,4 +11,4 @@ docker run -it \
  --ipc=host \
  --cap-add=SYS_NICE \
  --name fourier_aurora_server \
- fourier_aurora_sdk_gr2:v1.2.0 bash
+ fourier_aurora_sdk_gr3:v1.2.1 bash
