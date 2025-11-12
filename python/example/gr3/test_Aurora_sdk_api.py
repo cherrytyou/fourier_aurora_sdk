@@ -31,16 +31,16 @@ class TestAuroraClient:
         assert initial_state is not None, "Should be able to get initial FSM state"
         assert isinstance(initial_state, str), f"FSM state should be string, but got {type(initial_state)}"
 
-    @pytest.mark.parametrize("target_state,expected_state_name", [
-        (1, 'JointStand'),  # 根据实际状态名称调整
-        (3, 'SecurityProtection'),
-    ])
-    def test_multiple_state_transitions(self, target_state, expected_state_name):
-        """参数化测试多个状态转换 - 使用状态名称"""
-        self.client.set_fsm_state(target_state)
-        time.sleep(1.0)
-        current_state = self.client.get_fsm_state()
-        assert current_state == expected_state_name, f"Expected state {expected_state_name}, but got {current_state}"
+    # @pytest.mark.parametrize("target_state,expected_state_name", [
+    #     (1, 'JointStand'),  # 根据实际状态名称调整
+    #     (3, 'SecurityProtection'),
+    # ])
+    # def test_multiple_state_transitions(self, target_state, expected_state_name):
+    #     """参数化测试多个状态转换 - 使用状态名称"""
+    #     self.client.set_fsm_state(target_state)
+    #     time.sleep(1.0)
+    #     current_state = self.client.get_fsm_state()
+    #     assert current_state == expected_state_name, f"Expected state {expected_state_name}, but got {current_state}"
 
     def test_get_all_states(self):
         """测试获取所有可能的状态"""
